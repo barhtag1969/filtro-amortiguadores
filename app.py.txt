@@ -1,0 +1,57 @@
+import streamlit as st
+import pandas as pd
+
+# Configuración de la aplicación
+st.set_page_config(page_title="Filtro de Amortiguadores", page_icon="🔧", layout="wide")
+st.title("🔧 Filtro de Amortiguadores")
+st.write("Sube un archivo Excel y filtra la información fácilmente.")
+
+# Estilos mejorados
+st.markdown("""
+    <style>
+        .stButton > button {
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+            border-radius: 10px;
+            padding: 10px;
+        }
+        .stSelectbox, .stFileUploader {
+            font-size: 16px;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# Cargar archivo
+archivo = st.file_uploader("📂 Sube tu archivo Excel", type=["xls", "xlsx"])
+
+if archivo:
+    df = pd.read_excel(archivo)
+    st.write("### 👀 Vista previa de los datos")
+    st.dataframe(df.head(), use_container_width=True)
+    
+    # Seleccionar columna para filtrar
+    columnas = df.columns.tolist()
+    columna_filtro = st.selectbox("🔍 Selecciona una columna para filtrar", columnas)
+    valores_unicos = df[columna_filtro].unique()
+    valor_seleccionado = st.selectbox("🎯 Selecciona un valor", valores_unicos)
+    
+    # Filtrar datos
+    df_filtrado = df[df[columna_filtro] == valor_seleccionado]
+    st.write("### 📊 Datos Filtrados")
+    st.dataframe(df_filtrado, use_container_width=True)
+    
+    # Botón para descargar
+    @st.cache_data
+    def convertir_excel(df):
+        output = pd.ExcelWriter("datos_filtrados.xlsx", engine='xlsxwriter')
+        df.to_excel(output, index=False, sheet_name='Filtrado')
+        output.close()
+        return output
+    
+    st.markdown("---")
+    col1, col2 = st.columns([3, 1])
+    with col2:
+        if st.button("📥 Descargar Datos Filtrados"):
+            convertir_excel(df_filtrado)
+            st.success("✅ Archivo listo para descargar")
